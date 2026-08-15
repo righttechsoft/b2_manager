@@ -13,7 +13,7 @@ Built on the **B2 Native API v4** with **zero NuGet dependencies**: just .NET 8,
 ## Features
 
 ### Buckets
-- List, create, edit, and delete buckets
+- List, create, edit, and delete buckets. Buckets are created `allPrivate` by default; choosing `allPublic` means anyone with a file's URL can read it without authentication.
 - Edit covers both bucket type (`allPrivate` / `allPublic`) and **lifecycle rules** (file prefix, days from upload to hiding, days from hiding to deletion). Buckets with multiple rules keep the extra rules untouched.
 - **Total size and file count per bucket**, calculated in the background without blocking the UI and cached to disk. Hover the size cell to see when it was last calculated.
 - Double-click a bucket to jump straight to its files
@@ -96,8 +96,9 @@ Local state lives in `%APPDATA%\B2Manager\`: `credentials.bin` (encrypted key) a
 
 ## Notes and limitations
 
-- **Uploads are capped at 5 GB** — the app uses the single-call upload API and does not implement B2's large-file (multipart) flow.
+- Files over 200 MB automatically use B2's large-file (multipart) API, with parts uploaded in parallel; downloads over 200 MB are likewise split into simultaneous ranged requests.
 - **Transfers cannot be cancelled** once started; closing the window is the only way to abort.
+- **Backblaze integration checklist:** the app sends an identifying `User-Agent` on every request, honours `Retry-After` with exponential backoff on 429/503 (and other retryable errors), and creates buckets as `allPrivate` by default.
 - **Deletion is permanent.** The app deletes file *versions* rather than hiding them, so deleted data is not recoverable.
 - Bucket sizes are cached for 24 hours. They refresh automatically after an upload or delete in that bucket, and **Recalc Sizes** forces a full recount. Calculating a size lists every version in the bucket, which counts as billable class-C transactions on large accounts.
 - Application keys are immutable — Backblaze offers no update endpoint, so keys can only be created and deleted.

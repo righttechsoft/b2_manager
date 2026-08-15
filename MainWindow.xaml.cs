@@ -628,7 +628,7 @@ public partial class MainWindow : Window
                     BusyMessage.Text = $"Downloading {row.FileName} — {FileRow.FormatSize(done)}";
             });
 
-            await _client.DownloadFileAsync(bucket.BucketName, row.FileName, saveDialog.FileName, progress);
+            await _client.DownloadFileAsync(bucket.BucketName, row.FileName, saveDialog.FileName, progress, knownSize: row.Bytes);
         }
         catch (Exception ex) { ShowError(ex); }
         finally { if (busy) SetBusy(false); }
@@ -655,22 +655,55 @@ public partial class MainWindow : Window
             string what = rows.Count == 1
                 ? $"file '{rows[0].FileName}'"
                 : $"{rows.Count} files";
-            var result = MessageBox.Show(
-                $"Delete {what}? This permanently deletes the current version (unlike hiding, it cannot be undone).",
-                "Delete Files", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result != MessageBoxResult.Yes) return;
+            bool deleteAllVersions = false;
+
+            if (rows.Any(r => r.PrevVersions > 0))
+            {
+                var fields = new List<FieldSpec>
+                {
+                    new("scope", $"Delete {what}? This permanently deletes the selected version(s) and cannot be undone.", FieldType.Combo)
+                    {
+                        ComboItems = new List<string> { "Most recent version only", "All versions" },
+                        Default = "Most recent version only"
+                    }
+                };
+                var scopeDialog = new FormDialog("Delete Files", fields, "Delete") { Owner = this };
+                if (scopeDialog.ShowDialog() != true) return;
+                deleteAllVersions = scopeDialog.Values["scope"] == "All versions";
+            }
+            else
+            {
+                var result = MessageBox.Show(
+                    $"Delete {what}? This permanently deletes the current version (unlike hiding, it cannot be undone).",
+                    "Delete Files", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result != MessageBoxResult.Yes) return;
+            }
 
             busy = true;
             SetBusy(true, "Deleting files…");
 
+            var toDelete = new List<(string FileName, string FileId)>();
+            if (deleteAllVersions)
+            {
+                foreach (var row in rows)
+                {
+                    var versions = await _client.ListFileVersionsAsync(bucket.BucketId, row.FileName);
+                    toDelete.AddRange(versions.Where(v => v.FileName == row.FileName).Select(v => (v.FileName, v.FileId)));
+                }
+            }
+            else
+            {
+                toDelete.AddRange(rows.Select(r => (r.FileName, r.Source.FileId)));
+            }
+
             // Keep going after a failure so one bad file doesn't strand the rest half-deleted.
             var failures = new List<string>();
-            for (int i = 0; i < rows.Count; i++)
+            for (int i = 0; i < toDelete.Count; i++)
             {
-                var row = rows[i];
-                ReportProgress($"Deleting {i + 1} of {rows.Count}…", (double)(i + 1) / rows.Count);
-                try { await _client.DeleteFileVersionAsync(row.FileName, row.Source.FileId); }
-                catch (Exception ex) { failures.Add($"{row.FileName}: {ex.Message}"); }
+                var item = toDelete[i];
+                ReportProgress($"Deleting {i + 1} of {toDelete.Count}…", (double)(i + 1) / toDelete.Count);
+                try { await _client.DeleteFileVersionAsync(item.FileName, item.FileId); }
+                catch (Exception ex) { failures.Add($"{item.FileName}: {ex.Message}"); }
             }
 
             await RefreshFilesAsync();
@@ -678,7 +711,7 @@ public partial class MainWindow : Window
 
             if (failures.Count > 0)
                 MessageBox.Show(
-                    $"Deleted {rows.Count - failures.Count} of {rows.Count} files. Failed:\n\n" + string.Join("\n", failures.Take(10)),
+                    $"Deleted {toDelete.Count - failures.Count} of {toDelete.Count} files. Failed:\n\n" + string.Join("\n", failures.Take(10)),
                     "Delete Files", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         catch (Exception ex) { ShowError(ex); }
