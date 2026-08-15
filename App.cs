@@ -11,6 +11,7 @@ public class App : Application
     public static void Main()
     {
         var app = new App();
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("Styles.xaml", UriKind.Relative) });
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         app.DispatcherUnhandledException += App_DispatcherUnhandledException;

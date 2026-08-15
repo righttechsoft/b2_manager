@@ -410,7 +410,15 @@ public sealed class VersionsWindow : Window
 
         _uploadedColumn = new DataGridTextColumn { Header = "Uploaded", Binding = new Binding("UploadedDisplay"), SortMemberPath = "UploadTimestamp", Width = 150 };
         _grid.Columns.Add(_uploadedColumn);
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Size", Binding = new Binding("SizeDisplay"), SortMemberPath = "Bytes", Width = 90 });
+        _grid.Columns.Add(new DataGridTextColumn
+        {
+            Header = "Size",
+            Binding = new Binding("SizeDisplay"),
+            SortMemberPath = "Bytes",
+            Width = 90,
+            ElementStyle = (Style)Application.Current.FindResource("RightAlignedCell"),
+            HeaderStyle = (Style)Application.Current.FindResource("RightAlignedHeader")
+        });
         _grid.Columns.Add(new DataGridTextColumn { Header = "Action", Binding = new Binding("Action"), SortMemberPath = "Action", Width = 70 });
         _grid.Columns.Add(new DataGridTextColumn { Header = "File ID", Binding = new Binding("FileId"), SortMemberPath = "FileId", Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
 
