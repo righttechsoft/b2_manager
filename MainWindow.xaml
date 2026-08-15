@@ -1,0 +1,101 @@
+<Window x:Class="B2Manager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="B2 Manager" Height="600" Width="900"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="Ready"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <ProgressBar x:Name="BusyIndicator" IsIndeterminate="True" Width="120" Height="14" Visibility="Collapsed"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <TabControl x:Name="MainTabs">
+            <TabItem Header="Buckets">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="BucketsRefreshButton" Content="Refresh" Width="90" Margin="0,0,6,0" Click="BucketsRefreshButton_Click"/>
+                        <Button x:Name="BucketsCreateButton" Content="Create..." Width="90" Margin="0,0,6,0" Click="BucketsCreateButton_Click"/>
+                        <Button x:Name="BucketsEditButton" Content="Edit..." Width="90" Margin="0,0,6,0" Click="BucketsEditButton_Click"/>
+                        <Button x:Name="BucketsDeleteButton" Content="Delete" Width="90" Margin="0,0,6,0" Click="BucketsDeleteButton_Click"/>
+                        <Button x:Name="BucketsRecalcButton" Content="Recalc Sizes" Width="100" Click="BucketsRecalcButton_Click"/>
+                    </StackPanel>
+                    <DataGrid x:Name="BucketsGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow" MouseDoubleClick="BucketsGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Bucket ID" Binding="{Binding BucketId}" Width="220"/>
+                            <DataGridTextColumn Header="Name" Binding="{Binding BucketName}" Width="*"/>
+                            <DataGridTextColumn Header="Type" Binding="{Binding BucketType}" Width="120"/>
+                            <DataGridTextColumn Header="Size" Binding="{Binding SizeDisplay}" SortMemberPath="SizeBytes" Width="100">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="ToolTip" Value="{Binding SizeTooltip}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Files" Binding="{Binding FilesDisplay}" SortMemberPath="FileCount" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem x:Name="FilesTabItem" Header="Files">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Bucket:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="FilesBucketCombo" Width="200" DisplayMemberPath="BucketName" Margin="0,0,12,0" SelectionChanged="FilesBucketCombo_SelectionChanged"/>
+                        <Button x:Name="FilesRefreshButton" Content="Refresh" Width="90" Margin="0,0,6,0" Click="FilesRefreshButton_Click"/>
+                        <Button x:Name="FilesUploadButton" Content="Upload..." Width="90" Margin="0,0,6,0" Click="FilesUploadButton_Click"/>
+                        <Button x:Name="FilesDownloadButton" Content="Download..." Width="100" Margin="0,0,6,0" Click="FilesDownloadButton_Click"/>
+                        <Button x:Name="FilesDeleteButton" Content="Delete" Width="90" Margin="0,0,6,0" Click="FilesDeleteButton_Click"/>
+                        <Button x:Name="FilesVersionsButton" Content="Versions..." Width="90" Click="FilesVersionsButton_Click"/>
+                    </StackPanel>
+                    <DataGrid x:Name="FilesGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended" SelectionUnit="FullRow" MouseDoubleClick="FilesGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Binding="{Binding FileName}" Width="*"/>
+                            <DataGridTextColumn Header="Size" Binding="{Binding SizeDisplay}" SortMemberPath="Bytes" Width="100"/>
+                            <DataGridTextColumn Header="Content Type" Binding="{Binding ContentType}" Width="160"/>
+                            <DataGridTextColumn Header="Uploaded" Binding="{Binding UploadedDisplay}" Width="160"/>
+                            <DataGridTextColumn Header="Prev. Versions" Binding="{Binding PrevVersions}" Width="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="Keys">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="KeysRefreshButton" Content="Refresh" Width="90" Margin="0,0,6,0" Click="KeysRefreshButton_Click"/>
+                        <Button x:Name="KeysCreateButton" Content="Create..." Width="90" Margin="0,0,6,0" Click="KeysCreateButton_Click"/>
+                        <Button x:Name="KeysDeleteButton" Content="Delete" Width="90" Click="KeysDeleteButton_Click"/>
+                    </StackPanel>
+                    <DataGrid x:Name="KeysGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Key ID" Binding="{Binding ApplicationKeyId}" Width="220"/>
+                            <DataGridTextColumn Header="Name" Binding="{Binding KeyName}" Width="140"/>
+                            <DataGridTextColumn Header="Capabilities" Binding="{Binding CapabilitiesDisplay}" Width="*"/>
+                            <DataGridTextColumn Header="Bucket Restriction" Binding="{Binding BucketRestrictionDisplay}" Width="140"/>
+                            <DataGridTextColumn Header="Name Prefix" Binding="{Binding NamePrefixDisplay}" Width="120"/>
+                            <DataGridTextColumn Header="Expires" Binding="{Binding ExpiryDisplay}" Width="140"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+
+    <Border x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed">
+        <Border Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                Padding="24" CornerRadius="6"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel>
+                <TextBlock x:Name="BusyMessage" Text="Working..." Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                <ProgressBar x:Name="BusyProgress" IsIndeterminate="True" Width="320" Height="18"/>
+            </StackPanel>
+        </Border>
+    </Border>
+    </Grid>
+</Window>
